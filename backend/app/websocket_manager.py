@@ -1,6 +1,5 @@
 from fastapi import WebSocket
-from typing import Dict, List
-import json
+from typing import Dict
 
 class ConnectionManager:
     def __init__(self):
@@ -33,6 +32,3 @@ class ConnectionManager:
         
         for user_id in disconnected_users:
             self.disconnect(user_id)
-    
-    async def send_to_role(self, message: str, target_role: str, exclude_user: int = None):
-        await self.broadcast(message)

@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect, Form
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from typing import List, Dict
 import json
 from datetime import datetime
+import uvicorn
 
 from app.database import get_db, create_tables, init_demo_users
 from app.models import User, Ticket, Message, UserRole, TicketStatus
@@ -32,23 +32,24 @@ async def startup():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": datetime.utcnow()}
+    return {"status": "healthy", "timestamp": datetime.now()}
 
 @app.get("/users")
 async def get_users(db: Session = Depends(get_db)):
     users = db.query(User).all()
+
     return [{"id": user.id, "username": user.username, "role": user.role.value} for user in users]
 
 @app.get("/tickets/{user_id}")
 async def get_user_tickets(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
+
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
     if user.role == UserRole.CUSTOMER:
         tickets = db.query(Ticket).filter(Ticket.customer_id == user_id).all()
     elif user.role == UserRole.BUSINESS:
-        # business sees all tickets
         tickets = db.query(Ticket).all()
     else:
         tickets = db.query(Ticket).filter(Ticket.vendor_id == user_id).all()
@@ -76,6 +77,7 @@ async def create_ticket(
     db: Session = Depends(get_db)
 ):
     customer = db.query(User).filter(User.id == customer_id).first()
+
     if not customer or customer.role != UserRole.CUSTOMER:
         raise HTTPException(status_code=400, detail="Invalid customer")
     
@@ -97,6 +99,7 @@ async def create_ticket(
     }))
     
     return {"id": ticket.id, "message": "Ticket created successfully"}
+
 @app.post("/tickets/{ticket_id}/assign")
 async def assign_business(
     ticket_id: int,
@@ -111,6 +114,7 @@ async def assign_business(
     
     ticket.business_id = business_id
     ticket.status = TicketStatus.BUSINESS_ASSIGNED
+
     db.commit()
     
     await manager.broadcast(json.dumps({
@@ -120,6 +124,7 @@ async def assign_business(
     }))
     
     return {"message": "Ticket assigned successfully"}
+
 @app.post("/tickets/{ticket_id}/contact-vendor")
 async def contact_vendor(
     ticket_id: int,
@@ -155,6 +160,7 @@ async def contact_vendor(
     }))
     
     return {"message": "Vendor contacted successfully"}
+
 @app.post("/tickets/{ticket_id}/send-message")
 async def send_message(
     ticket_id: int,
@@ -198,6 +204,7 @@ async def send_message(
     }))
     
     return {"message": "Message sent successfully"}
+
 @app.post("/tickets/{ticket_id}/resolve")
 async def resolve_ticket(
     ticket_id: int,
@@ -229,6 +236,7 @@ async def resolve_ticket(
     }))
     
     return {"message": "Ticket resolved successfully"}
+
 @app.get("/tickets/{ticket_id}/messages")
 async def get_ticket_messages(ticket_id: int, user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
@@ -253,15 +261,17 @@ async def get_ticket_messages(ticket_id: int, user_id: int, db: Session = Depend
         }
         for message in filtered_messages
     ]
+
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: int):
     await manager.connect(websocket, user_id)
     try:
         while True:
-            data = await websocket.receive_text()
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(user_id)
 
+
+
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

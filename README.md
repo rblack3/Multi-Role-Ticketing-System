@@ -32,14 +32,14 @@ docker-compose up --build
 - **Role-Based Interface**: Separate views for each user type
 - **Real-Time Updates**: WebSocket messaging between all parties
 - **Async Workflow**: Vendors can respond hours later without breaking flow
-- **Single Database**: SQLite for dev, PostgreSQL for production
+- **Single Database**: SQLite for the ease of use and 1 file system
 - **One-Command Setup**: Docker Compose handles everything
 
 ## Tech Stack
 
 - **Backend**: FastAPI + SQLAlchemy + WebSockets
 - **Frontend**: Next.js 14 + TypeScript + Tailwind CSS
-- **Database**: SQLite/PostgreSQL
+- **Database**: SQLite
 - **Deployment**: Vercel + Railway
 
 ## API Reference
@@ -78,7 +78,7 @@ triaging-system/
 ├── backend/                     # FastAPI backend
 │   ├── app/
 │   │   ├── main.py             # FastAPI app + WebSockets
-│   │   ├── database.py         # SQLite/PostgreSQL setup
+│   │   ├── database.py         # SQLite setup
 │   │   ├── models.py           # Database models
 │   │   └── websocket_manager.py # Real-time messaging
 │   └── requirements.txt        # Python dependencies

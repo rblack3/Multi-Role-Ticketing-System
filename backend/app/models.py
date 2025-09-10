@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey, String, DateTime, Integer, Enum, Text
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
 import enum
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 class UserRole(enum.Enum):
     CUSTOMER = "customer"
@@ -17,45 +17,50 @@ class TicketStatus(enum.Enum):
     VENDOR_CONTACTED = "vendor_contacted"
     VENDOR_RESPONDED = "vendor_responded"
     RESOLVED = "resolved"
-    CLOSED = "closed"
 
 class User(Base):
     __tablename__ = "users"
     
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True, nullable=False)
-    role = Column(Enum(UserRole), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String, unique=True)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
 class Ticket(Base):
     __tablename__ = "tickets"
     
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    description = Column(Text, nullable=False)
-    status = Column(Enum(TicketStatus), default=TicketStatus.OPEN)
-    customer_id = Column(Integer, ForeignKey("users.id"))
-    business_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    vendor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str] = mapped_column(Text)
+    status: Mapped[TicketStatus] = mapped_column(Enum(TicketStatus))
+
+    customer_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    business_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    vendor_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
     
-    customer = relationship("User", foreign_keys=[customer_id])
-    business = relationship("User", foreign_keys=[business_id])
-    vendor = relationship("User", foreign_keys=[vendor_id])
-    messages = relationship("Message", back_populates="ticket")
+    # Relationships
+    customer: Mapped['User'] = relationship(foreign_keys=[customer_id])
+    business: Mapped['User'] = relationship(foreign_keys=[business_id])
+    vendor: Mapped['User'] = relationship(foreign_keys=[vendor_id])
+    messages: Mapped['Message'] = relationship(back_populates="ticket")
 
 class Message(Base):
     __tablename__ = "messages"
     
-    id = Column(Integer, primary_key=True, index=True)
-    ticket_id = Column(Integer, ForeignKey("tickets.id"))
-    sender_id = Column(Integer, ForeignKey("users.id"))
-    recipient_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    content = Column(Text, nullable=False)
-    message_type = Column(String, default="general")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ticket_id: Mapped[int] = mapped_column(Integer, ForeignKey("tickets.id"))
+    sender_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    recipient_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+
+    content: Mapped[str] = mapped_column(String(300), nullable=False)
+    message_type: Mapped[str] = mapped_column(String, default="general")
     
-    ticket = relationship("Ticket", back_populates="messages")
-    sender = relationship("User", foreign_keys=[sender_id])
-    recipient = relationship("User", foreign_keys=[recipient_id])
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    
+    # Relationships
+    ticket: Mapped['Ticket'] = relationship(back_populates="messages")
+    sender: Mapped['User'] = relationship(foreign_keys=[sender_id])
+    recipient: Mapped['User'] = relationship(foreign_keys=[recipient_id])
