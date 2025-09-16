@@ -175,8 +175,13 @@ async def send_message(
         raise HTTPException(status_code=400, detail="Invalid ticket or sender")
     
     if sender.role == UserRole.BUSINESS:
-        recipient_id = ticket.vendor_id
-        message_type = "business_to_vendor"
+        # After vendor responds, business can send messages to customer
+        if ticket.status == TicketStatus.VENDOR_RESPONDED:
+            recipient_id = ticket.customer_id
+            message_type = "business_to_customer"
+        else:
+            recipient_id = ticket.vendor_id
+            message_type = "business_to_vendor"
     elif sender.role == UserRole.VENDOR:
         recipient_id = ticket.business_id
         message_type = "vendor_to_business"
@@ -246,7 +251,7 @@ async def get_ticket_messages(ticket_id: int, user_id: int, db: Session = Depend
     messages = db.query(Message).filter(Message.ticket_id == ticket_id).all()
     
     if user.role == UserRole.CUSTOMER:
-        filtered_messages = [msg for msg in messages if msg.message_type == "resolution"]
+        filtered_messages = [msg for msg in messages if msg.message_type in ["resolution", "business_to_customer"]]
     else:
         filtered_messages = messages
     

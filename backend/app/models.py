@@ -53,7 +53,7 @@ class Message(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     ticket_id: Mapped[int] = mapped_column(Integer, ForeignKey("tickets.id"))
     sender_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
-    recipient_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    recipient_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
 
     content: Mapped[str] = mapped_column(String(300), nullable=False)
     message_type: Mapped[str] = mapped_column(String, default="general")

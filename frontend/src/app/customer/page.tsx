@@ -44,8 +44,11 @@ export default function CustomerPage() {
     
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
-      if (data.type === 'ticket_resolved' || data.type === 'ticket_assigned') {
+      if (data.type === 'ticket_resolved' || data.type === 'ticket_assigned' || data.type === 'new_message') {
         fetchTickets()
+        if (selectedTicket) {
+          fetchMessages(selectedTicket.id)
+        }
       }
     }
 

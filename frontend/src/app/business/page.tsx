@@ -61,7 +61,7 @@ export default function BusinessPage() {
     
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
-      if (data.type === 'new_ticket' || data.type === 'vendor_response') {
+      if (data.type) {
         fetchTickets()
         if (selectedTicket) {
           fetchMessages(selectedTicket.id)
@@ -411,16 +411,18 @@ export default function BusinessPage() {
                   )}
 
                   {/* Chat Input */}
-                  {selectedTicket?.vendor && selectedTicket.status !== 'resolved' && (
+                  {selectedTicket?.business?.id === userId && selectedTicket.status !== 'resolved' && (
                     <div className="mt-6 border-t pt-4">
-                      <h4 className="font-semibold text-sm mb-2">Send Message to Vendor</h4>
+                      <h4 className="font-semibold text-sm mb-2">
+                        Send Message to {selectedTicket.status === 'vendor_responded' ? 'Customer' : 'Vendor'}
+                      </h4>
                       <div className="flex space-x-2">
                         <input
                           type="text"
                           value={newMessage}
                           onChange={(e) => setNewMessage(e.target.value)}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                          placeholder="Message to vendor..."
+                          placeholder={`Message to ${selectedTicket.status === 'vendor_responded' ? 'customer' : 'vendor'}...`}
                           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                         />
                         <button
