@@ -46,8 +46,11 @@ export default function VendorPage() {
     
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
-      if (data.type === 'vendor_contacted') {
+      if (data.type === 'vendor_contacted' || data.type === 'new_message') {
         fetchTickets()
+        if (selectedTicket) {
+          fetchMessages(selectedTicket.id)
+        }
       }
     }
 
